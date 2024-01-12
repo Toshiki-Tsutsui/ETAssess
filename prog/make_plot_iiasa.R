@@ -1,35 +1,35 @@
 #GHG emissions trajectory--------------------------------------------------
 iamc_GHG<-filter(iamc,VARIABLE %in% c("Emissions|Kyoto Gases"))%>% 
-  filter(SCENARIO %in% c("Baseline","INDC_w/oET","2020NDC_w/oET")) %>% 
+  filter(SCENARIO %in% c("Baseline","2015NDC_w/oET","2020NDC_w/oET")) %>% 
   filter(year %in% c(2015,2020,2025,2030)) %>% 
   filter((SCENARIO!="Baseline" & year %in% c(2020,2025,2030))|(SCENARIO=="Baseline")) %>% 
   mutate(SCENARIO=recode(SCENARIO,"Baseline"="Baseline",
-                         "INDC_w/oET"="INDC",
+                         "2015NDC_w/oET"="2015NDC",
                          "2020NDC_w/oET"="2020NDC")) %>% 
   aggregate(value~year+SCENARIO+VARIABLE+UNIT+OECD_category,sum)
 iamc_GHG$OECD_category<-factor(iamc_GHG$OECD_category,
                                levels = c("World","OECD","Non-OECD"))
 iamc_GHG$SCENARIO<-factor(iamc_GHG$SCENARIO,
-                          levels = c("Baseline","INDC","2020NDC"))
+                          levels = c("Baseline","2015NDC","2020NDC"))
 g1<-ggplot()+
   geom_line(iamc_GHG,mapping = aes(x=year,y=value/1000,group=SCENARIO,color=SCENARIO),linewidth=1)+
   ylab(bquote('GHG emissions (Gt'~CO[2]~'eq/yr)'))+
   facet_wrap(~OECD_category,scales = "free_y")+
   ylim(c(5,NA))+
-  scale_color_manual(values = c("blue","orange","red"),labels=c(Baseline="Baseline",INDC="INDC",'2020NDC'="2020NDC"))+
+  scale_color_manual(values = c("blue","orange","red"),labels=c(Baseline="Baseline",'2015NDC'="2015NDC",'2020NDC'="2020NDC"))+
   theme_1+
   theme(axis.text.x = element_text(angle = 45,size=16,hjust=1,vjust=1))
 plot(g1)
 ggsave("../output/GHG_emission_timescale.png",plot = g1,width = 10,height = 5,dpi=300)
-
+ggsave("../output/GHG_emission_timescale.svg",plot = g1,width = 10,height = 5,dpi=300)
 
 #GHG absolute emissions-------------------------------------------------------------------------
 iamc_GHG_region<-filter(iamc,VARIABLE %in% c("Emissions|Kyoto Gases"))%>% 
-  filter(SCENARIO %in% c("Baseline","INDC_w/oET","INDC_w/ET","2020NDC_w/oET","2020NDC_w/ET")) %>% 
+  filter(SCENARIO %in% c("Baseline","2015NDC_w/oET","2015NDC_w/ET","2020NDC_w/oET","2020NDC_w/ET")) %>% 
   filter(year %in% c(2030)) %>% 
   mutate(value=value/1000)
 iamc_GHG_region$SCENARIO<-factor(iamc_GHG_region$SCENARIO,
-                          levels = c("Baseline","INDC_w/oET","INDC_w/ET","2020NDC_w/oET","2020NDC_w/ET"))
+                          levels = c("Baseline","2015NDC_w/oET","2015NDC_w/ET","2020NDC_w/oET","2020NDC_w/ET"))
 iamc_GHG_region_wider<-iamc_GHG_region %>% 
   select(SCENARIO,REGION,value) %>% 
   pivot_wider(names_from = "SCENARIO",values_from = value) %>% 
@@ -42,10 +42,10 @@ iamc_GHG_region_wider<-iamc_GHG_region %>%
   mutate(REGION=factor(REGION,levels=c("Japan","USA","Canada","EU25","Oceania","Turkey","Rest of Europe","Former Soviet Union","China","India",
                                        "Southeast Asia","Rest of Asia","Brazil","Rest of South America","Middle East","North Africa","Rest of Africa","World"))) %>% 
   arrange(REGION) %>% 
-  select(REGION,Baseline,'INDC_w/oET','INDC_w/ET','2020NDC_w/oET','2020NDC_w/ET')
+  select(REGION,Baseline,'2015NDC_w/oET','2015NDC_w/ET','2020NDC_w/oET','2020NDC_w/ET')
 
 g<-gt(iamc_GHG_region_wider) %>% 
-  fmt_number(columns = c("Baseline","INDC_w/oET","INDC_w/ET","2020NDC_w/oET","2020NDC_w/ET"),n_sigfig  = 3) %>% 
+  fmt_number(columns = c("Baseline","2015NDC_w/oET","2015NDC_w/ET","2020NDC_w/oET","2020NDC_w/ET"),n_sigfig  = 3) %>% 
   tab_options(table.width = pct(25),
               table_body.hlines.width = 0,
               column_labels.border.top.width = 2, 
@@ -53,7 +53,7 @@ g<-gt(iamc_GHG_region_wider) %>%
               column_labels.border.bottom.width = 2,
               column_labels.border.bottom.color = "black",
               table_body.border.bottom.color = "black" ) %>% 
-  cols_align(align = "center", columns = c("Baseline","INDC_w/oET","INDC_w/ET","2020NDC_w/oET","2020NDC_w/ET")) %>% 
+  cols_align(align = "center", columns = c("Baseline","2015NDC_w/oET","2015NDC_w/ET","2020NDC_w/oET","2020NDC_w/ET")) %>% 
   cols_align(align = "left", columns = c("REGION")) %>% 
   opt_table_font("Times New Roman")
 gtsave(g,"../output/GHG_region.docx")
@@ -64,18 +64,18 @@ iamc_GHG_diff<-filter(iamc_diff,VARIABLE=="Emissions|Kyoto Gases") %>%
   filter(year==2030) %>% 
   select(-value,-baseline)
 iamc_GHG_diff$REGION<-factor(iamc_GHG_diff$REGION,levels = country_code$country)
-iamc_GHG_diff$SCENARIO<-factor(iamc_GHG_diff$SCENARIO,levels =c("INDC_w/oET","INDC_w/ET","2020NDC_w/oET","2020NDC_w/ET"))
+iamc_GHG_diff$SCENARIO<-factor(iamc_GHG_diff$SCENARIO,levels =c("2015NDC_w/oET","2015NDC_w/ET","2020NDC_w/oET","2020NDC_w/ET"))
 
 g2<-ggplot()+
   geom_point(iamc_GHG_diff,mapping=aes(x=REGION,y=bau_percent,shape=SCENARIO,color=SCENARIO),size=3,stroke=1.3)+
   scale_fill_discrete()+
-  scale_shape_manual(values = c(`INDC_w/oET`=16,`INDC_w/ET`=4,`2020NDC_w/oET`=16,`2020NDC_w/ET`=4))+
-  scale_color_manual(values = c(`INDC_w/oET`="orange",`INDC_w/ET`="orange",`2020NDC_w/oET`="red",`2020NDC_w/ET`="red"))+
+  scale_shape_manual(values = c(`2015NDC_w/oET`=16,`2015NDC_w/ET`=4,`2020NDC_w/oET`=16,`2020NDC_w/ET`=4))+
+  scale_color_manual(values = c(`2015NDC_w/oET`="orange",`2015NDC_w/ET`="orange",`2020NDC_w/oET`="red",`2020NDC_w/ET`="red"))+
   theme_1+
   ylab("GHG emissions reduction rates (%)")
 plot(g2)
 ggsave('../output/GHG_reduction.png',plot = g2,width = 8,height = 6,dpi=300)
-
+ggsave('../output/GHG_reduction.svg',plot = g2,width = 8,height = 6,dpi=300)
 
 #carbon price---------------------------------------------------
 iamc_carbonP<-filter(iamc,VARIABLE=="Price|Carbon") %>% 
@@ -86,34 +86,50 @@ iamc_carbonP<-filter(iamc,VARIABLE=="Price|Carbon") %>%
 iamc_carbonP_longer<-iamc_carbonP %>% 
   pivot_longer(cols=-c("REGION","VARIABLE","UNIT","year","OECD_category"),
                names_to="SCENARIO",values_to="value") %>% 
-  filter(SCENARIO %in% c("INDC_w/oET","INDC_w/ET","2020NDC_w/oET","2020NDC_w/ET"))
+  filter(SCENARIO %in% c("2015NDC_w/oET","2015NDC_w/ET","2020NDC_w/oET","2020NDC_w/ET"))
 iamc_carbonP_longer$REGION<-factor(iamc_carbonP_longer$REGION,levels = country_code$country)
 iamc_carbonP_longer$SCENARIO<-factor(iamc_carbonP_longer$SCENARIO,levels = scenario_name$scenario)
 g<-ggplot()+
   geom_point(iamc_carbonP_longer,mapping=aes(x=REGION,y=value,shape=SCENARIO,color=SCENARIO),size=3,stroke=1.3)+
   ylab(bquote('Carbon Price (US$2010/t'~CO[2]~')'))+
-  scale_shape_manual(values = c(`INDC_w/oET`=16,`INDC_w/ET`=4,`2020NDC_w/oET`=16,`2020NDC_w/ET`=4))+
-  scale_color_manual(values = c(`INDC_w/oET`="orange",`INDC_w/ET`="orange",`2020NDC_w/oET`="red",`2020NDC_w/ET`="red"))+
+  scale_shape_manual(values = c(`2015NDC_w/oET`=16,`2015NDC_w/ET`=4,`2020NDC_w/oET`=16,`2020NDC_w/ET`=4))+
+  scale_color_manual(values = c(`2015NDC_w/oET`="orange",`2015NDC_w/ET`="orange",`2020NDC_w/oET`="red",`2020NDC_w/ET`="red"))+
   theme_1
 plot(g)
 ggsave('../output/carbon_price.png',plot = g,width = 8,height = 6,dpi=300)
-
+ggsave('../output/carbon_price.svg',plot = g,width = 8,height = 6,dpi=300)
 
 #GDP loss------------------------------------------------------
 iamc_gdp<-filter(iamc,VARIABLE=="Policy Cost|GDP Loss rate") %>% 
-  filter(SCENARIO %in% c("INDC_w/oET","INDC_w/ET","2020NDC_w/oET","2020NDC_w/ET")) %>% 
+  filter(SCENARIO %in% c("2015NDC_w/oET","2015NDC_w/ET","2020NDC_w/oET","2020NDC_w/ET")) %>% 
   filter(year==2030)
 
 g4<-ggplot()+
   geom_point(iamc_gdp,
              mapping=aes(x=REGION,y=value,shape=SCENARIO,color=SCENARIO),size=3,stroke=1.3)+
   ylab("GDP loss rate(%)")+
-  scale_shape_manual(values = c(`INDC_w/oET`=16,`INDC_w/ET`=4,`2020NDC_w/oET`=16,`2020NDC_w/ET`=4))+
-  scale_color_manual(values = c(`INDC_w/oET`="orange",`INDC_w/ET`="orange",`2020NDC_w/oET`="red",`2020NDC_w/ET`="red"))+
+  scale_shape_manual(values = c(`2015NDC_w/oET`=16,`2015NDC_w/ET`=4,`2020NDC_w/oET`=16,`2020NDC_w/ET`=4))+
+  scale_color_manual(values = c(`2015NDC_w/oET`="orange",`2015NDC_w/ET`="orange",`2020NDC_w/oET`="red",`2020NDC_w/ET`="red"))+
   theme_1
 plot(g4)
 ggsave('../output/gdp.png',plot = g4,width = 8,height = 6,dpi=300)
+ggsave('../output/gdp.svg',plot = g4,width = 8,height = 6,dpi=300)
 
+#Consumption loss------------------------------------------------------
+iamc_cns<-filter(iamc,VARIABLE=="Policy Cost|Consumption Loss rate") %>% 
+  filter(SCENARIO %in% c("2015NDC_w/oET","2015NDC_w/ET","2020NDC_w/oET","2020NDC_w/ET")) %>% 
+  filter(year==2030)
+
+g4<-ggplot()+
+  geom_point(iamc_cns,
+             mapping=aes(x=REGION,y=value,shape=SCENARIO,color=SCENARIO),size=3,stroke=1.3)+
+  ylab("Consumption loss rate(%)")+
+  scale_shape_manual(values = c(`2015NDC_w/oET`=16,`2015NDC_w/ET`=4,`2020NDC_w/oET`=16,`2020NDC_w/ET`=4))+
+  scale_color_manual(values = c(`2015NDC_w/oET`="orange",`2015NDC_w/ET`="orange",`2020NDC_w/oET`="red",`2020NDC_w/ET`="red"))+
+  theme_1
+plot(g4)
+ggsave('../output/cns.png',plot = g4,width = 8,height = 6,dpi=300)
+ggsave('../output/cns.svg',plot = g4,width = 8,height = 6,dpi=300)
 
 #Primary Energy-----------------------------------------------------------
 iamc_PE<-filter(iamc,VARIABLE %in% c("Primary Energy|Biomass|w/o CCS","Primary Energy|Gas|w/ CCS",
@@ -123,7 +139,7 @@ iamc_PE<-filter(iamc,VARIABLE %in% c("Primary Energy|Biomass|w/o CCS","Primary E
                                  "Primary Energy|Hydro","Primary Energy|Oil|w/o CCS",
                                  "Primary Energy|Solar","Primary Energy|Wind",
                                  "Primary Energy|Coal|w/ CCS","Primary Energy|Oil|w/ CCS"))%>% 
-  filter(SCENARIO %in% c("2020NDC_w/oET","2020NDC_w/ET","INDC_w/oET","INDC_w/ET","Baseline")) %>% 
+  filter(SCENARIO %in% c("2020NDC_w/oET","2020NDC_w/ET","2015NDC_w/oET","2015NDC_w/ET","Baseline")) %>% 
   filter(year==2030) %>% 
   aggregate(value~SCENARIO+VARIABLE+year+UNIT+OECD_category,sum)
 iamc_PE$VARIABLE<-str_remove_all(iamc_PE$VARIABLE,pattern = "Primary Energy\\|") %>% 
@@ -142,13 +158,13 @@ g3<-ggplot(data=iamc_PE)+
   theme_2
 plot(g3)
 ggsave('../output/Primary_Engergy.png',plot=g3,width=10,height=5,dpi=300)
-
+ggsave('../output/Primary_Engergy.svg',plot=g3,width=10,height=5,dpi=300)
 
 #Final Energy-----------------------------------------------------------
 iamc_FE<-filter(iamc,VARIABLE %in% c("Final Energy|Electricity","Final Energy|Gases",
                                      "Final Energy|Heat","Final Energy|Hydrogen",
                                      "Final Energy|Liquids","Final Energy|Solids"))%>% 
-  filter(SCENARIO %in% c("2020NDC_w/oET","2020NDC_w/ET","INDC_w/oET","INDC_w/ET","Baseline")) %>% 
+  filter(SCENARIO %in% c("2020NDC_w/oET","2020NDC_w/ET","2015NDC_w/oET","2015NDC_w/ET","Baseline")) %>% 
   filter(year==2030) %>% 
   aggregate(value~SCENARIO+VARIABLE+year+UNIT+OECD_category,sum)
 iamc_FE$VARIABLE<-str_remove_all(iamc_FE$VARIABLE,pattern = "Final Energy\\|") %>% 
@@ -164,11 +180,12 @@ g3<-ggplot(data=iamc_FE)+
   theme_2
 plot(g3)
 ggsave('../output/Final_Engergy_fuel.png',plot=g3,width=10,height=5,dpi=300)
+ggsave('../output/Final_Engergy_fuel.svg',plot=g3,width=10,height=5,dpi=300)
 
 iamc_FE<-filter(iamc,VARIABLE %in% c("Final Energy|Industry","Final Energy|Other Sector",
                                      "Final Energy|Residential","Final Energy|Commercial",
                                      "Final Energy|Transportation","Final Energy|Non-Energy Use"))%>% 
-  filter(SCENARIO %in% c("2020NDC_w/oET","2020NDC_w/ET","INDC_w/oET","INDC_w/ET","Baseline")) %>% 
+  filter(SCENARIO %in% c("2020NDC_w/oET","2020NDC_w/ET","2015NDC_w/oET","2015NDC_w/ET","Baseline")) %>% 
   filter(year==2030) %>% 
   aggregate(value~year+SCENARIO+VARIABLE+UNIT+OECD_category,sum) 
 iamc_FE$VARIABLE<-str_remove_all(iamc_FE$VARIABLE,pattern = "Final Energy\\|") %>% 
@@ -184,7 +201,7 @@ g3<-ggplot(data=iamc_FE)+
   theme_2
 plot(g3)
 ggsave('../output/Final_Engergy_sector.png',plot=g3,width=10,height=5,dpi=300)
-
+ggsave('../output/Final_Engergy_sector.svg',plot=g3,width=10,height=5,dpi=300)
 
 #powergeneration------------------------------------------
 iamc_PG<-filter(iamc,VARIABLE %in% c("Secondary Energy|Electricity|Biomass|w/o CCS","Secondary Energy|Electricity|Gas|w/ CCS",
@@ -194,7 +211,7 @@ iamc_PG<-filter(iamc,VARIABLE %in% c("Secondary Energy|Electricity|Biomass|w/o C
                                      "Secondary Energy|Electricity|Hydro","Secondary Energy|Electricity|Oil|w/o CCS",
                                      "Secondary Energy|Electricity|Solar","Secondary Energy|Electricity|Wind",
                                      "Secondary Energy|Electricity|Coal|w/ CCS","Secondary Energy|Electricity|Oil|w/ CCS"))%>% 
-  filter(SCENARIO %in% c("2020NDC_w/oET","2020NDC_w/ET","INDC_w/oET","INDC_w/ET","Baseline")) %>% 
+  filter(SCENARIO %in% c("2020NDC_w/oET","2020NDC_w/ET","2015NDC_w/oET","2015NDC_w/ET","Baseline")) %>% 
   filter(year==2030) %>% 
   aggregate(value~year+SCENARIO+VARIABLE+UNIT+OECD_category,sum) 
 iamc_PG$VARIABLE<-str_remove_all(iamc_PG$VARIABLE,pattern = "Secondary Energy\\|Electricity\\|") %>% 
@@ -209,8 +226,89 @@ g<-ggplot(data=iamc_PG)+
   ylab("Power Generation(EJ/yr)")+
   facet_wrap(~OECD_category,ncol=4,scales = "free_y")+
   scale_fill_manual(values = palette_PE)+
-  guides(fill = guide_legend(reverse = TRUE))+
+  guides(fill = guide_legend(reverse = F))+
   theme_2
 plot(g)
 ggsave('../output/Power_Generation.png',plot=g,width=10,height=5,dpi=300)
+ggsave('../output/Power_Generation.svg',plot=g,width=10,height=5,dpi=300)
 
+#external effects---------------------------------------------------------------
+iamc_SO2_diff<-filter(iamc_diff,VARIABLE=="Emissions|Sulfur") %>% 
+  filter(year==2030) %>% 
+  select(-value,-baseline,-year,-OECD_category,-UNIT,-VARIABLE)
+#  mutate(bau_percent=-bau_percent) %>% 
+#  rename(SO2=bau_percent)
+iamc_SO2_diff$REGION<-factor(iamc_SO2_diff$REGION,levels = country_code$country)
+iamc_SO2_diff$SCENARIO<-factor(iamc_SO2_diff$SCENARIO,levels =c("2015NDC_w/oET","2015NDC_w/ET","2020NDC_w/oET","2020NDC_w/ET"))
+
+g2<-ggplot()+
+  geom_point(iamc_SO2_diff,mapping=aes(x=REGION,y=bau_percent,shape=SCENARIO,color=SCENARIO),size=3,stroke=1.3)+
+  scale_fill_discrete()+
+  scale_shape_manual(values = c(`2015NDC_w/oET`=16,`2015NDC_w/ET`=4,`2020NDC_w/oET`=16,`2020NDC_w/ET`=4))+
+  scale_color_manual(values = c(`2015NDC_w/oET`="orange",`2015NDC_w/ET`="orange",`2020NDC_w/oET`="red",`2020NDC_w/ET`="red"))+
+  theme_1+
+  ylab(bquote(~SO[2]~' emissions reduction rates (%)'))
+plot(g2)
+ggsave('../output/SO2_reduction.png',plot = g2,width = 8,height = 6,dpi=300)
+ggsave('../output/SO2_reduction.svg',plot = g2,width = 8,height = 6,dpi=300)
+
+
+iamc_NOX_diff<-filter(iamc_diff,VARIABLE=="Emissions|NOx") %>% 
+  filter(year==2030) %>% 
+  select(-value,-baseline,-year,-OECD_category,-UNIT,-VARIABLE)
+#  mutate(bau_percent=-bau_percent) %>% 
+#  rename(NOX=bau_percent)
+iamc_NOX_diff$REGION<-factor(iamc_NOX_diff$REGION,levels = country_code$country)
+iamc_NOX_diff$SCENARIO<-factor(iamc_NOX_diff$SCENARIO,levels =c("2015NDC_w/oET","2015NDC_w/ET","2020NDC_w/oET","2020NDC_w/ET"))
+
+g2<-ggplot()+
+  geom_point(iamc_NOX_diff,mapping=aes(x=REGION,y=bau_percent,shape=SCENARIO,color=SCENARIO),size=3,stroke=1.3)+
+  scale_fill_discrete()+
+  scale_shape_manual(values = c(`2015NDC_w/oET`=16,`2015NDC_w/ET`=4,`2020NDC_w/oET`=16,`2020NDC_w/ET`=4))+
+  scale_color_manual(values = c(`2015NDC_w/oET`="orange",`2015NDC_w/ET`="orange",`2020NDC_w/oET`="red",`2020NDC_w/ET`="red"))+
+  theme_1+
+  ylab("NOx emissions reduction rates (%)")
+plot(g2)
+ggsave('../output/NOX_reduction.png',plot = g2,width = 8,height = 6,dpi=300)
+ggsave('../output/NOX_reduction.svg',plot = g2,width = 8,height = 6,dpi=300)
+
+iamc_PFood_diff<-filter(iamc_diff,VARIABLE=="Price|Agriculture|Non-Energy Crops and Livestock|Index") %>% 
+  filter(year==2030) %>% 
+  select(-value,-baseline,-year,-OECD_category,-UNIT,-VARIABLE) %>% 
+  mutate(bau_percent=-bau_percent)
+#  rename(FoodPrice=bau_percent)
+iamc_PFood_diff$REGION<-factor(iamc_PFood_diff$REGION,levels = country_code$country)
+iamc_PFood_diff$SCENARIO<-factor(iamc_PFood_diff$SCENARIO,levels =c("2015NDC_w/oET","2015NDC_w/ET","2020NDC_w/oET","2020NDC_w/ET"))
+
+g2<-ggplot()+
+  geom_point(iamc_PFood_diff,mapping=aes(x=REGION,y=bau_percent,shape=SCENARIO,color=SCENARIO),size=3,stroke=1.3)+
+  scale_fill_discrete()+
+  scale_shape_manual(values = c(`2015NDC_w/oET`=16,`2015NDC_w/ET`=4,`2020NDC_w/oET`=16,`2020NDC_w/ET`=4))+
+  scale_color_manual(values = c(`2015NDC_w/oET`="orange",`2015NDC_w/ET`="orange",`2020NDC_w/oET`="red",`2020NDC_w/ET`="red"))+
+  theme_1+
+  ylab("Food price change (%)")
+plot(g2)
+ggsave('../output/Food_price_change.png',plot = g2,width = 8,height = 6,dpi=300)
+ggsave('../output/Food_price_change.svg',plot = g2,width = 8,height = 6,dpi=300)
+
+iamc_Prm_Ren_shr<-filter(iamc,VARIABLE %in% c("Primary Energy|Non-Biomass Renewables","Primary Energy"))%>% 
+  filter(SCENARIO %in% c("2020NDC_w/oET","2020NDC_w/ET","2015NDC_w/oET","2015NDC_w/ET","Baseline")) %>% 
+  filter(year==2030) %>%
+  select(-OECD_category) %>% 
+  pivot_wider(names_from = VARIABLE, values_from = value) %>% 
+  rename(Total='Primary Energy',Renewables='Primary Energy|Non-Biomass Renewables') %>% 
+  mutate(Share=100*Renewables/Total) %>% 
+  mutate(bau_percent=(Share-Share[SCENARIO=="Baseline"])) %>% 
+  filter(SCENARIO!="Baseline")
+
+g2<-ggplot()+
+  geom_point(iamc_Prm_Ren_shr,mapping=aes(x=REGION,y=bau_percent,shape=SCENARIO,color=SCENARIO),size=3,stroke=1.3)+
+  geom_abline(slope = 0,intercept = 0,linetype=2)+
+  scale_fill_discrete()+
+  scale_shape_manual(values = c(`2015NDC_w/oET`=16,`2015NDC_w/ET`=4,`2020NDC_w/oET`=16,`2020NDC_w/ET`=4))+
+  scale_color_manual(values = c(`2015NDC_w/oET`="orange",`2015NDC_w/ET`="orange",`2020NDC_w/oET`="red",`2020NDC_w/ET`="red"))+
+  theme_1+
+  ylab("Renewable energy shares differences(% points)")
+plot(g2)
+ggsave('../output/Renewable_share_change.png',plot = g2,width = 8,height = 7.2,dpi=300)
+ggsave('../output/Renewable_share_change.svg',plot = g2,width = 8,height = 7.2,dpi=300)

@@ -23,22 +23,22 @@ df_Loss_dcp_gdp0<-get_param("Loss_dcp_gdp")
 df_GDP_17<-rename(df_GDP0,year=Y,region=R) %>% 
   filter(year==2030) %>% 
   filter(region %in% c(cge17)) %>% 
-  filter(SCENARIO %in% c("INDC_w/ET","2020NDC_w/ET")) 
+  filter(SCENARIO %in% c("2015NDC_w/ET","2020NDC_w/ET")) 
 df_trade<-rename(df_pbop0,year=Y,region=R,category=.i4,trade=PBOP) %>% 
   filter(year==2030) %>% 
-  filter(SCENARIO %in% c("INDC_w/ET","2020NDC_w/ET")) %>% 
+  filter(SCENARIO %in% c("2015NDC_w/ET","2020NDC_w/ET")) %>% 
   filter(region %in% cge17) %>% 
   filter(category=="trade") %>% 
   select(-category)
 df_exp<-rename(df_GDP_s0,year=Y,region=R,category=INS_MCR,export=GDP_s) %>% 
   filter(year==2030) %>% 
-  filter(SCENARIO %in% c("INDC_w/ET","2020NDC_w/ET")) %>% 
+  filter(SCENARIO %in% c("2015NDC_w/ET","2020NDC_w/ET")) %>% 
   filter(region %in% cge17) %>% 
   filter(category=="ROW") %>% 
   select(-category)
 df_imp<-rename(df_GDP_s0,year=Y,region=R,category=INS_MCR,import=GDP_s) %>% 
   filter(year==2030) %>% 
-  filter(SCENARIO %in% c("INDC_w/ET","2020NDC_w/ET")) %>% 
+  filter(SCENARIO %in% c("2015NDC_w/ET","2020NDC_w/ET")) %>% 
   filter(region %in% cge17) %>% 
   filter(category=="IMP") %>% 
   select(-category)
@@ -46,7 +46,7 @@ df_imp<-rename(df_GDP_s0,year=Y,region=R,category=INS_MCR,import=GDP_s) %>%
 
 df_ghgimp_market<-rename(df_pbop0,year=Y,region=R,category=.i4,value=PBOP) %>% 
   filter(year==2030) %>% 
-  filter(SCENARIO %in% c("INDC_w/ET","2020NDC_w/ET")) %>% 
+  filter(SCENARIO %in% c("2015NDC_w/ET","2020NDC_w/ET")) %>% 
   filter(region %in% cge17) %>% 
   filter(category=="GHGC") %>% 
   select(-category) %>% 
@@ -77,9 +77,9 @@ filter(df_ghgimp_market_wider,`Money_2020NDC_w/ET`>=0) %>%
   filter(region!="WLD") %>% 
   select(`Money_2020NDC_w/ET`) %>% 
   sum()
-filter(df_ghgimp_market_wider,`Money_INDC_w/ET`>=0) %>%
+filter(df_ghgimp_market_wider,`Money_2015NDC_w/ET`>=0) %>%
   filter(region!="WLD") %>% 
-  select(`Money_INDC_w/ET`) %>% 
+  select(`Money_2015NDC_w/ET`) %>% 
   sum()
 
 #-----------------------------------------------------------------------------------------------
@@ -89,15 +89,63 @@ df_Loss_dcp_gdp<-rename(df_Loss_dcp_gdp0,"Region"="R","Sector"="SCO2_S","Year"="
 
 VA_loss<-filter(df_Loss_dcp_gdp,decele %in% c("va")) %>%
   mutate(decele=recode(decele,"va"="Value_added")) %>% 
-  mutate(SCENARIO=factor(SCENARIO,levels=c("INDC_w/oET","INDC_w/ET","2020NDC_w/oET","2020NDC_w/ET"))) %>% 
+  mutate(SCENARIO=factor(SCENARIO,levels=c("2015NDC_w/oET","2015NDC_w/ET","2020NDC_w/oET","2020NDC_w/ET"))) %>% 
   mutate(Region=recode(Region,"World"="World","R5OECD90+EU"="OECD","Non-OECD"="Non-OECD")) %>% 
   mutate(Region=factor(Region,levels=c("World","OECD","Non-OECD"))) %>% 
   filter(Sector!="OTH")
 analysis_VA_loss<-filter(df_Loss_dcp_gdp,decele %in% c("output","residual2","va_output")) %>% 
   mutate(decele=recode(decele,"output"="Output Change","residual2"="Residual","va_output"="Value-added_Output ratio")) %>% 
   mutate(decele=factor(decele,levels=c("Output Change","Value-added_Output ratio","Residual"))) %>% 
-  mutate(SCENARIO=factor(SCENARIO,levels=c("INDC_w/oET","INDC_w/ET","2020NDC_w/oET","2020NDC_w/ET"))) %>% 
+  mutate(SCENARIO=factor(SCENARIO,levels=c("2015NDC_w/oET","2015NDC_w/ET","2020NDC_w/oET","2020NDC_w/ET"))) %>% 
   mutate(Sector=factor(Sector,levels=c("BIO","SER","TRS","IND","PWR","OEN","AGR","FFE","OTH"))) %>% 
   mutate(Region=recode(Region,"World"="World","R5OECD90+EU"="OECD","Non-OECD"="Non-OECD")) %>% 
   mutate(Region=factor(Region,levels=c("World","OECD","Non-OECD"))) %>% 
   filter(Sector!="OTH")
+
+df_GDP_s<-rename(df_GDP_s0,year=Y,region=R,category=INS_MCR,value=GDP_s) %>% 
+  filter(region %in% c(cge17,"World")) %>% 
+  filter(year %in% c(2030)) 
+df_GDP_s<-df_GDP_s %>% 
+  aggregate(value~year+region+SCENARIO,FUN = "sum") %>% 
+  mutate(category="Total") %>% 
+  bind_rows(df_GDP_s)
+df_GDP_s_diff<-group_by(df_GDP_s,year,region,category) %>% 
+  mutate(bau_percent=(value-value[SCENARIO=="Baseline"])) %>% 
+  ungroup() %>% 
+  group_by(year,region) %>% 
+  mutate(bau_percent=bau_percent/value[SCENARIO=="Baseline" & category=="Total"]) %>% 
+  filter(SCENARIO!="Baseline") %>% 
+  select(-value) %>% 
+  mutate(category=recode(category,"HURB"="Consumption","ROW"="Export","IMP"="Import","S-I"="SaveInvestment")) %>% 
+  mutate(SCENARIO=factor(SCENARIO,levels=c("2015NDC_w/oET","2015NDC_w/ET","2020NDC_w/oET","2020NDC_w/ET"))) %>% 
+  mutate(region=recode(region,"World"="World","JPN"="Japan","USA"="USA","CAN"="Canada","XE25"="EU25",
+                       "XOC"="Oceania","TUR"="Turkey","XER"="Rest of Europe",
+                       "CIS"="Former Soviet Union","CHN"="China","IND"="India",
+                       "XSE"="Southeast Asia","XSA"="Rest of Asia","BRA"="Brazil",
+                       "XLM"="Rest of South America","XME"="Middle East",
+                       "XNF"="North Africa","XAF"="Rest of Africa")) %>% 
+  mutate(region=factor(region,levels=c("World","Japan","USA","Canada","EU25","Oceania","Turkey","Rest of Europe","Former Soviet Union","China","India",
+                                       "Southeast Asia","Rest of Asia","Brazil","Rest of South America","Middle East","North Africa","Rest of Africa"))) %>% 
+  filter(category!="SaveInvestment")
+  
+
+
+
+
+
+
+
+df_GDP_s_diff_total<-df_GDP_s %>% 
+  aggregate(value~year+region+SCENARIO,FUN = "sum") %>% 
+  mutate(bau_percent=(1-value/value[SCENARIO=="Baseline"])*100) %>% 
+  filter(SCENARIO!="Baseline") %>% 
+  mutate(SCENARIO=factor(SCENARIO,levels=c("2015NDC_w/oET","2015NDC_w/ET","2020NDC_w/oET","2020NDC_w/ET"))) %>% 
+  mutate(region=recode(region,"WLD"="World","JPN"="Japan","USA"="USA","CAN"="Canada","XE25"="EU25",
+                       "XOC"="Oceania","TUR"="Turkey","XER"="Rest of Europe",
+                       "CIS"="Former Soviet Union","CHN"="China","IND"="India",
+                       "XSE"="Southeast Asia","XSA"="Rest of Asia","BRA"="Brazil",
+                       "XLM"="Rest of South America","XME"="Middle East",
+                       "XNF"="North Africa","XAF"="Rest of Africa")) %>% 
+  mutate(region=factor(region,levels=c("Japan","USA","Canada","EU25","Oceania","Turkey","Rest of Europe","Former Soviet Union","China","India",
+                                       "Southeast Asia","Rest of Asia","Brazil","Rest of South America","Middle East","North Africa","Rest of Africa")))
+
