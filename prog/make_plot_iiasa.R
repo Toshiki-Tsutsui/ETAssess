@@ -233,50 +233,36 @@ ggsave('../output/Power_Generation.png',plot=g,width=10,height=5,dpi=300)
 ggsave('../output/Power_Generation.svg',plot=g,width=10,height=5,dpi=300)
 
 #external effects---------------------------------------------------------------
-iamc_SO2_diff<-filter(iamc_diff,VARIABLE=="Emissions|Sulfur") %>% 
+iamc_SO2<-iamc %>% 
+  filter(VARIABLE=="Emissions|Sulfur") %>% 
   filter(year==2030) %>% 
-  select(-value,-baseline,-year,-OECD_category,-UNIT,-VARIABLE)
-#  mutate(bau_percent=-bau_percent) %>% 
-#  rename(SO2=bau_percent)
-iamc_SO2_diff$REGION<-factor(iamc_SO2_diff$REGION,levels = country_code$country)
-iamc_SO2_diff$SCENARIO<-factor(iamc_SO2_diff$SCENARIO,levels =c("2015NDC_w/oET","2015NDC_w/ET","2020NDC_w/oET","2020NDC_w/ET"))
+  select(-OECD_category)
 
-g2<-ggplot()+
-  geom_point(iamc_SO2_diff,mapping=aes(x=REGION,y=bau_percent,shape=SCENARIO,color=SCENARIO),size=3,stroke=1.3)+
-  scale_fill_discrete()+
-  scale_shape_manual(values = c(`2015NDC_w/oET`=16,`2015NDC_w/ET`=4,`2020NDC_w/oET`=16,`2020NDC_w/ET`=4))+
-  scale_color_manual(values = c(`2015NDC_w/oET`="orange",`2015NDC_w/ET`="orange",`2020NDC_w/oET`="red",`2020NDC_w/ET`="red"))+
-  theme_1+
-  ylab(bquote(~SO[2]~' emissions reduction rates (%)'))
-plot(g2)
-ggsave('../output/SO2_reduction.png',plot = g2,width = 8,height = 6,dpi=300)
-ggsave('../output/SO2_reduction.svg',plot = g2,width = 8,height = 6,dpi=300)
-
-
-iamc_NOX_diff<-filter(iamc_diff,VARIABLE=="Emissions|NOx") %>% 
+iamc_NOX<-iamc %>% 
+  filter(VARIABLE=="Emissions|NOx") %>% 
   filter(year==2030) %>% 
-  select(-value,-baseline,-year,-OECD_category,-UNIT,-VARIABLE)
-#  mutate(bau_percent=-bau_percent) %>% 
-#  rename(NOX=bau_percent)
-iamc_NOX_diff$REGION<-factor(iamc_NOX_diff$REGION,levels = country_code$country)
-iamc_NOX_diff$SCENARIO<-factor(iamc_NOX_diff$SCENARIO,levels =c("2015NDC_w/oET","2015NDC_w/ET","2020NDC_w/oET","2020NDC_w/ET"))
+  select(-OECD_category)
 
-g2<-ggplot()+
-  geom_point(iamc_NOX_diff,mapping=aes(x=REGION,y=bau_percent,shape=SCENARIO,color=SCENARIO),size=3,stroke=1.3)+
-  scale_fill_discrete()+
-  scale_shape_manual(values = c(`2015NDC_w/oET`=16,`2015NDC_w/ET`=4,`2020NDC_w/oET`=16,`2020NDC_w/ET`=4))+
-  scale_color_manual(values = c(`2015NDC_w/oET`="orange",`2015NDC_w/ET`="orange",`2020NDC_w/oET`="red",`2020NDC_w/ET`="red"))+
-  theme_1+
-  ylab("NOx emissions reduction rates (%)")
-plot(g2)
-ggsave('../output/NOX_reduction.png',plot = g2,width = 8,height = 6,dpi=300)
-ggsave('../output/NOX_reduction.svg',plot = g2,width = 8,height = 6,dpi=300)
+iamc_air_pol<-full_join(iamc_SO2,iamc_NOX) %>% 
+  mutate(VARIABLE=recode_factor(VARIABLE,"Emissions|NOx"="NOx","Emissions|Sulfur"="SO2"))
+
+g<-ggplot(data=iamc_air_pol)+
+  geom_point(iamc_air_pol,mapping=aes(x=VARIABLE,y=value,shape=SCENARIO,color=SCENARIO),size=3,stroke=1.3)+
+  scale_x_discrete(labels=c("NOx",bquote(~SO[2]~'')))+
+  scale_shape_manual(values = c(`Baseline`=17,`2015NDC_w/oET`=16,`2015NDC_w/ET`=4,`2020NDC_w/oET`=16,`2020NDC_w/ET`=4))+
+  scale_color_manual(values = c(`Baseline`="black",`2015NDC_w/oET`="orange",`2015NDC_w/ET`="orange",`2020NDC_w/oET`="red",`2020NDC_w/ET`="red"))+
+  ylab("Emissions(Mt/yr)")+
+  facet_wrap(~REGION,ncol=4,scales = "free_y")+
+  theme_1
+plot(g)
+ggsave('../output/Air_pollution.png',plot = g,width = 9,height = 11,dpi=300)
+ggsave('../output/Air_pollution.svg',plot = g,width = 9,height = 11,dpi=300)
+
 
 iamc_PFood_diff<-filter(iamc_diff,VARIABLE=="Price|Agriculture|Non-Energy Crops and Livestock|Index") %>% 
   filter(year==2030) %>% 
   select(-value,-baseline,-year,-OECD_category,-UNIT,-VARIABLE) %>% 
   mutate(bau_percent=-bau_percent)
-#  rename(FoodPrice=bau_percent)
 iamc_PFood_diff$REGION<-factor(iamc_PFood_diff$REGION,levels = country_code$country)
 iamc_PFood_diff$SCENARIO<-factor(iamc_PFood_diff$SCENARIO,levels =c("2015NDC_w/oET","2015NDC_w/ET","2020NDC_w/oET","2020NDC_w/ET"))
 
@@ -312,3 +298,46 @@ g2<-ggplot()+
 plot(g2)
 ggsave('../output/Renewable_share_change.png',plot = g2,width = 8,height = 7.2,dpi=300)
 ggsave('../output/Renewable_share_change.svg',plot = g2,width = 8,height = 7.2,dpi=300)
+
+
+#Emissions share-----------------------------------------------
+iamc_EPC<-filter(iamc,VARIABLE=="Population") %>% 
+  filter(SCENARIO %in% c("Baseline")) %>% 
+  filter(year==2030) %>% 
+  filter(REGION!="World") %>% 
+  mutate(Approach="EPC")
+iamc_CAP<-filter(iamc,VARIABLE=="GDP|MER") %>% 
+  filter(SCENARIO %in% c("Baseline")) %>% 
+  filter(year==2030) %>% 
+  filter(REGION!="World") %>% 
+  full_join(iamc_EPC) %>% 
+  mutate(value=((value[VARIABLE=="Population"])^2)/value) %>% 
+  filter(VARIABLE!="Population") %>% 
+  mutate(Approach="CAP")
+iamc_GHG2020<-filter(iamc,VARIABLE=="Emissions|Kyoto Gases") %>% 
+  filter(SCENARIO %in% c("Baseline")) %>% 
+  filter(year==2020) %>% 
+  filter(REGION!="World") %>% 
+  mutate(Approach="CER")
+iamc_EShare<-iamc_GHG_region %>% 
+  mutate(Approach=SCENARIO) %>% 
+  full_join(iamc_EPC) %>% 
+  full_join(iamc_CAP) %>% 
+  full_join(iamc_GHG2020) %>% 
+  select(-OECD_category,-UNIT,-year,-VARIABLE,-SCENARIO) %>% 
+  filter(REGION!="World") %>% 
+  mutate(Approach=factor(Approach,levels=c("Baseline","2015NDC_w/oET","2015NDC_w/ET","2020NDC_w/oET","2020NDC_w/ET",
+                         "EPC","CAP","CER")))
+
+g2<-ggplot()+
+  geom_bar(iamc_EShare,mapping=aes(x=Approach,y=value,fill=REGION),stat = "identity",position = "fill")+
+  scale_fill_manual(values=c("#84919e","#c9ace6","#77d9a8","#ffca80","#bfe4ff",
+                              "#d8f255","#ffff80","#ffcabf","#804000",
+                              "#990099","#f6aa00","#ff8082","#4dc4ff",
+                              "#005aff","#03af7a","#fff100","#ff4b00"))+
+  scale_y_continuous(labels = percent)+
+  theme_1+
+  ylab("Emissions share(%)")
+plot(g2)
+ggsave('../output/Burden_share.png',plot = g2,width = 10,height = 7.2,dpi=300)
+ggsave('../output/Burden_share.svg',plot = g2,width = 10,height = 7.2,dpi=300)
