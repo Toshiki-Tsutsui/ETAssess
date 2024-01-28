@@ -294,7 +294,7 @@ g2<-ggplot()+
   scale_shape_manual(values = c(`2015NDC_w/oET`=16,`2015NDC_w/ET`=4,`2020NDC_w/oET`=16,`2020NDC_w/ET`=4))+
   scale_color_manual(values = c(`2015NDC_w/oET`="orange",`2015NDC_w/ET`="orange",`2020NDC_w/oET`="red",`2020NDC_w/ET`="red"))+
   theme_1+
-  ylab("Renewable energy shares differences(% points)")
+  ylab("Renewable energy share differences(% points)")
 plot(g2)
 ggsave('../output/Renewable_share_change.png',plot = g2,width = 8,height = 7.2,dpi=300)
 ggsave('../output/Renewable_share_change.svg',plot = g2,width = 8,height = 7.2,dpi=300)
